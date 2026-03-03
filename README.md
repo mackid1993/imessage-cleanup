@@ -41,7 +41,7 @@ The main connection is preserved for browsing the device list between deletes.
 ## Building
 
 ```bash
-git clone --recursive https://github.com/mackid1993/imessage-cleanup.git
+git clone https://github.com/mackid1993/imessage-cleanup.git
 cd imessage-cleanup
 ./build.sh
 ```
@@ -88,4 +88,4 @@ open "iMessage Cleanup.app"
 
 ## Acknowledgments
 
-Built on top of [Rustpush](https://github.com/lrhodin/imessage) for Apple IDS protocol support.
+Built on top of [Matrix iMessage Bridge](https://github.com/lrhodin/imessage) for Apple IDS protocol support.
