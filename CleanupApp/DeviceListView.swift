@@ -44,9 +44,23 @@ struct DeviceListView: View {
                 Button("Sign Out") {
                     appState.logout()
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
                 .disabled(appState.operationInFlight)
             }
             .padding()
+
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.yellow)
+                Text("You must sign out before quitting the app, or you will leave a ghost device.")
+                    .font(.callout)
+                    .fontWeight(.medium)
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+            .background(Color.yellow.opacity(0.12))
 
             Divider()
 

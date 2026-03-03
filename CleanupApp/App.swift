@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - App State
 
-enum AppScreen {
+enum AppScreen: Equatable {
     case login
     case devices
 }
@@ -79,6 +79,8 @@ struct CleanupApp: App {
                 Button("Quit iMessage Cleanup") {
                     if appState.operationInFlight {
                         appState.globalError = "Cannot quit while a delete operation is in progress. A temporary device registration is active — quitting now would leave a ghost. Please wait."
+                    } else if appState.screen == .devices && appState.users != nil {
+                        appState.globalError = "Please sign out before quitting to avoid leaving a ghost device."
                     } else {
                         NSApplication.shared.terminate(nil)
                     }
