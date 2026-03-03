@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/cleanup-ffi"]
+resolver = "2"

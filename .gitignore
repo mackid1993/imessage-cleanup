@@ -1,0 +1,8 @@
+/target
+CleanupApp/Bridge/
+imessage-cleanup
+*.app/
+state/
+*.plist
+!CleanupApp/entitlements.plist
+!**/Cargo.toml
