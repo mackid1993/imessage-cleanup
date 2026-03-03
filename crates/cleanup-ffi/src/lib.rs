@@ -596,21 +596,72 @@ pub async fn register_and_deregister_device(
 }
 
 /// Deregister the cleanup tool on sign out to avoid leaving a ghost.
+///
+/// The tool doesn't register during login (to avoid creating ghosts on startup),
+/// but after deleting devices the keystore auth key has been overwritten by
+/// re-authentication. We must register on the main connection first so there's
+/// something to deregister, then deregister self.
 #[uniffi::export(async_runtime = "tokio")]
 pub async fn cleanup_deregister(
     users: &WrappedIDSUsers,
     connection: &WrappedAPSConnection,
     config: &WrappedOSConfig,
 ) -> Result<(), CleanupError> {
-    let users_guard = users.inner.read().await;
-    if users_guard.is_empty() { return Ok(()); }
-    info!("=== Deregistering cleanup tool ===");
-    let aps_state = connection.inner.state.read().await;
-    if let Err(e) = users_guard[0].deregister_self(&aps_state, &*config.config).await {
-        warn!("Failed to deregister self: {}", e);
-    } else {
-        info!("Successfully deregistered cleanup tool.");
+    use rustpush::{register, authenticate_apple, login_apple_delegates, IDSNGMIdentity, MADRID_SERVICE, LoginDelegate, APSState};
+
+    info!("=== Cleanup deregister (sign out) ===");
+
+    // Re-authenticate to get a fresh user whose auth key matches the keystore
+    let os_config = config.config.clone();
+    let client_info = os_config.get_gsa_config(&*connection.inner.state.read().await, false);
+    let anisette_arc = default_provider(client_info.clone(), PathBuf::from_str("state/anisette").unwrap());
+
+    let delegates = {
+        let mut anisette_guard = anisette_arc.lock().await;
+        login_apple_delegates(
+            &users.username,
+            &users.pet,
+            &users.adsid,
+            None,
+            &mut *anisette_guard,
+            &*os_config,
+            &[LoginDelegate::IDS],
+        ).await.map_err(|e| CleanupError::Generic { msg: format!("Sign-out re-auth failed: {}", e) })?
+    };
+
+    let ids_delegate = delegates.ids
+        .ok_or(CleanupError::Generic { msg: "No IDS delegate for sign-out".into() })?;
+
+    let fresh_user = authenticate_apple(ids_delegate, &*os_config).await
+        .map_err(|e| CleanupError::Generic { msg: format!("Sign-out auth failed: {}", e) })?;
+    let mut fresh_users = vec![fresh_user];
+
+    // Register on the main connection so we have something to deregister
+    let identity = IDSNGMIdentity::new()
+        .map_err(|e| CleanupError::Generic { msg: format!("Failed to create identity: {}", e) })?;
+
+    {
+        let aps_state = connection.inner.state.read().await;
+        register(
+            &*config.config,
+            &aps_state,
+            &[&MADRID_SERVICE],
+            &mut fresh_users,
+            &identity,
+        ).await?;
     }
+    info!("Registered on main connection for clean deregister");
+
+    // Now deregister self
+    {
+        let aps_state = connection.inner.state.read().await;
+        if let Err(e) = fresh_users[0].deregister_self(&aps_state, &*config.config).await {
+            warn!("Failed to deregister self: {}", e);
+        } else {
+            info!("Successfully deregistered cleanup tool.");
+        }
+    }
+
     Ok(())
 }
 
