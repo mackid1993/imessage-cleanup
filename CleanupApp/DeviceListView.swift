@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct DeviceListView: View {
     @EnvironmentObject var appState: AppState
@@ -37,9 +38,9 @@ struct DeviceListView: View {
                 .help("Refresh device list")
 
                 Button("Save Logs") {
-                    CleanupLog.shared.save()
+                    saveLogs()
                 }
-                .help("Save debug logs to cleanup-log.txt")
+                .help("Save debug logs to file")
 
                 Button("Sign Out") {
                     appState.logout()
@@ -234,6 +235,21 @@ struct DeviceListView: View {
     }
 
     // MARK: - Actions
+
+    private func saveLogs() {
+        let panel = NSSavePanel()
+        panel.title = "Save Logs"
+        panel.nameFieldStringValue = "cleanup-log.txt"
+        panel.allowedContentTypes = [.plainText]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let text = LogCapture.shared.getText() + "\n" + CleanupLog.shared.getText() + "\n"
+        do {
+            try text.write(to: url, atomically: true, encoding: .utf8)
+            logCapture.append("Logs saved to \(url.path)")
+        } catch {
+            errorMessage = "Failed to save logs: \(error.localizedDescription)"
+        }
+    }
 
     private func refreshDevices() {
         guard let users = appState.users,
