@@ -194,10 +194,10 @@ struct DeviceListView: View {
         VStack(spacing: 0) {
             // Info bar
             HStack(spacing: 16) {
-                Label("Bridge", systemImage: "server.rack")
+                Label("Rustpush", systemImage: "server.rack")
                     .font(.caption)
                     .foregroundColor(.orange)
-                Label("Apple device", systemImage: "iphone")
+                Label("Apple Device", systemImage: "iphone")
                     .font(.caption)
                     .foregroundColor(.blue)
                 Spacer()
@@ -398,7 +398,7 @@ struct DeviceRow: View {
                         .if(style == .removed) { $0.strikethrough().opacity(0.6) }
 
                     if isBridge {
-                        Text("Bridge")
+                        Text("Rustpush")
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .padding(.horizontal, 5)
