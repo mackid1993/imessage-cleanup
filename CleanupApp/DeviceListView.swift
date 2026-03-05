@@ -225,6 +225,7 @@ struct DeviceListView: View {
                                 Image(systemName: "trash")
                             }
                             .buttonStyle(.borderless)
+                            .disabled(appState.operationInFlight)
                             .help("Remove this device registration")
                         }
                     }
